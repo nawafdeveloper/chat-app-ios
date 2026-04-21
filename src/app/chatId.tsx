@@ -1,13 +1,22 @@
+import ChatRoomInput from '@/components/chat-room-input';
+import VirtualizedListScrollView from '@/components/virtualized-list-scroll-view';
+import { useReplyStore } from '@/store/use-reply-store';
+import { Button, ContextMenu, Divider, Host, Section } from '@expo/ui/swift-ui';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useRef } from 'react';
 import {
     FlatList,
     ImageBackground,
+    ScrollViewProps,
     StyleSheet,
     Text,
     useColorScheme,
     View,
 } from 'react-native';
+import {
+    KeyboardGestureArea
+} from 'react-native-keyboard-controller';
 import Svg, { Path } from 'react-native-svg';
 
 type Message = {
@@ -84,109 +93,156 @@ type BubbleProps = {
     prevSent?: boolean;
     nextSent?: boolean;
     isDark: boolean;
+    setReply: (user: string, message: string) => void;
 };
 
-function Bubble({ message, prevSent, nextSent, isDark }: BubbleProps) {
+function Bubble({ message, prevSent, nextSent, isDark, setReply }: BubbleProps) {
     const { sent, text, time, status } = message;
     const theme = isDark ? DARK : LIGHT;
 
     const isGroupedTop = prevSent === sent;
     const isGroupedBottom = nextSent === sent;
     const showTail = !isGroupedBottom;
-
     const bubbleColor = sent ? theme.sentBubble : theme.receivedBubble;
 
     return (
-        <View style={[
-            styles.row,
-            sent ? styles.rowSent : styles.rowReceived,
-            isGroupedBottom && styles.groupedMargin,
-        ]}>
-            {!sent && showTail && <Tail color={bubbleColor} sent={false} />}
-            {!sent && !showTail && <View style={styles.tailSpacer} />}
-
-            <View style={[
-                styles.bubble,
-                { backgroundColor: bubbleColor },
-                sent ? (
-                    showTail ? styles.sentBubbleTail : styles.sentBubbleGrouped
-                ) : (
-                    showTail ? styles.receivedBubbleTail : styles.receivedBubbleGrouped
-                ),
-                isGroupedTop && (sent ? styles.sentGroupedTop : styles.receivedGroupedTop),
-            ]}>
-                <Text style={[
-                    styles.messageText,
-                    { color: sent ? theme.sentText : theme.receivedText },
-                ]}>
-                    {text}
-                    <Text style={styles.timeSpacer}>
-                        {'  ' + time + (sent ? '    ' : '')}
-                    </Text>
-                </Text>
-                <View style={styles.metaRow}>
-                    <Text style={[
-                        styles.timeText,
-                        { color: sent ? theme.sentTime : theme.receivedTime },
+        <Host>
+            <ContextMenu key={message.id}>
+                <ContextMenu.Trigger key={message.id}>
+                    <View style={[
+                        styles.row,
+                        sent ? styles.rowSent : styles.rowReceived,
+                        isGroupedBottom && styles.groupedMargin,
                     ]}>
-                        {time}
-                    </Text>
-                    {sent && (
-                        <Ionicons
-                            name={
-                                status === 'read'
-                                    ? 'checkmark-done'
-                                    : status === 'delivered'
-                                        ? 'checkmark-done'
-                                        : 'checkmark'
-                            }
-                            size={14}
-                            color={status === 'read' ? theme.checkRead : theme.checkUnread}
-                            style={styles.checkmark}
-                        />
-                    )}
-                </View>
-            </View>
+                        {!sent && showTail && <Tail color={bubbleColor} sent={false} />}
+                        {!sent && !showTail && <View style={styles.tailSpacer} />}
 
-            {sent && showTail && <Tail color={bubbleColor} sent={true} />}
-            {sent && !showTail && <View style={styles.tailSpacer} />}
-        </View>
+                        <View style={[
+                            styles.bubble,
+                            { backgroundColor: bubbleColor },
+                            sent ? (
+                                showTail ? styles.sentBubbleTail : styles.sentBubbleGrouped
+                            ) : (
+                                showTail ? styles.receivedBubbleTail : styles.receivedBubbleGrouped
+                            ),
+                            isGroupedTop && (sent ? styles.sentGroupedTop : styles.receivedGroupedTop),
+                        ]}>
+                            <Text style={[
+                                styles.messageText,
+                                { color: sent ? theme.sentText : theme.receivedText },
+                            ]}>
+                                {text}
+                                <Text style={styles.timeSpacer}>
+                                    {'  ' + time + (sent ? '    ' : '')}
+                                </Text>
+                            </Text>
+                            <View style={styles.metaRow}>
+                                <Text style={[
+                                    styles.timeText,
+                                    { color: sent ? theme.sentTime : theme.receivedTime },
+                                ]}>
+                                    {time}
+                                </Text>
+                                {sent && (
+                                    <Ionicons
+                                        name={
+                                            status === 'read'
+                                                ? 'checkmark-done'
+                                                : status === 'delivered'
+                                                    ? 'checkmark-done'
+                                                    : 'checkmark'
+                                        }
+                                        size={14}
+                                        color={status === 'read' ? theme.checkRead : theme.checkUnread}
+                                        style={styles.checkmark}
+                                    />
+                                )}
+                            </View>
+                        </View>
+
+                        {sent && showTail && <Tail color={bubbleColor} sent={true} />}
+                        {sent && !showTail && <View style={styles.tailSpacer} />}
+                    </View>
+                </ContextMenu.Trigger>
+                <ContextMenu.Items>
+                    <Section title="Message">
+                        <Button label="Reply" systemImage="arrowshape.turn.up.left" onPress={() => setReply('Mohammed', message.text)} />
+                        <Button label="Forward" systemImage="arrowshape.turn.up.right" onPress={() => console.log('Forward', message.text)} />
+                        <Button label="Copy" systemImage="doc.on.doc" onPress={() => console.log('Copy', message.text)} />
+                    </Section>
+                    <Divider />
+                    <Section title="Chat">
+                        <Button label="Pin" systemImage="pin" onPress={() => console.log('Pin', message.text)} />
+                        <Button label="Star" systemImage="star" onPress={() => console.log('Star', message.text)} />
+                        <Button label="Mute" systemImage="bell.slash" onPress={() => console.log('Mute', message.text)} />
+                    </Section>
+                    <Divider />
+                    <Button label="Delete" systemImage="trash" role="destructive" onPress={() => console.log('Delete', message.text)} />
+                </ContextMenu.Items>
+            </ContextMenu>
+        </Host>
     );
 }
+
+const INPUT_BAR_HEIGHT = 60;
 
 const ChatRoom = () => {
     const listRef = useRef<FlatList>(null);
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
+    const { setReply } = useReplyStore();
+
+    const memoList = useCallback(
+        (props: ScrollViewProps) => <VirtualizedListScrollView {...props} />,
+        [],
+    );
 
     return (
-        <ImageBackground
-            source={
-                isDark
-                    ? require('../../assets/bg-pattern-dark.png')
-                    : require('../../assets/bg-pattern-light.png')
-            }
-            style={styles.background}
-            resizeMode="cover"
+        <KeyboardGestureArea
+            interpolator="ios"
+            offset={INPUT_BAR_HEIGHT}
+            style={{ flex: 1 }}
+            textInputNativeID="chat-input"
         >
-            <FlatList
-                ref={listRef}
-                data={MESSAGES}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item, index }) => (
-                    <Bubble
-                        message={item}
-                        prevSent={index > 0 ? MESSAGES[index - 1].sent : undefined}
-                        nextSent={index < MESSAGES.length - 1 ? MESSAGES[index + 1].sent : undefined}
-                        isDark={isDark}
-                    />
-                )}
-                contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.listContent}
-                onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
-                onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+            <ImageBackground
+                source={
+                    isDark
+                        ? require('../../assets/bg-pattern-dark.png')
+                        : require('../../assets/bg-pattern-light.png')
+                }
+                style={styles.background}
+                resizeMode="cover"
+            >
+                <FlatList
+                    ref={listRef}
+                    data={MESSAGES}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item, index }) => (
+                        <Bubble
+                            key={index}
+                            message={item}
+                            prevSent={index > 0 ? MESSAGES[index - 1].sent : undefined}
+                            nextSent={index < MESSAGES.length - 1 ? MESSAGES[index + 1].sent : undefined}
+                            isDark={isDark}
+                            setReply={setReply}
+                        />
+                    )}
+                    contentInsetAdjustmentBehavior="automatic"
+                    contentContainerStyle={styles.listContent}
+                    onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
+                    onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+                    renderScrollComponent={memoList}
+                />
+                <ChatRoomInput />
+            </ImageBackground>
+            <LinearGradient
+                colors={[
+                    scheme === 'dark' ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)',
+                    scheme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)',
+                ]}
+                style={styles.linearBackground}
             />
-        </ImageBackground>
+        </KeyboardGestureArea>
     );
 };
 
@@ -195,12 +251,23 @@ export default ChatRoom;
 const BORDER_RADIUS = 12;
 
 const styles = StyleSheet.create({
+    flex: {
+        flex: 1,
+    },
     background: {
         flex: 1,
+    },
+    linearBackground: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 90,
     },
     listContent: {
         paddingHorizontal: 16,
         paddingVertical: 8,
+        paddingBottom: INPUT_BAR_HEIGHT,
         gap: 16,
     },
     row: {
@@ -239,24 +306,12 @@ const styles = StyleSheet.create({
         borderRadius: BORDER_RADIUS,
         borderCurve: 'continuous',
     },
-    sentBubbleTail: {
-        borderRadius: BORDER_RADIUS,
-    },
-    sentBubbleGrouped: {
-        borderRadius: BORDER_RADIUS,
-    },
-    sentGroupedTop: {
-        borderTopRightRadius: BORDER_RADIUS,
-    },
-    receivedBubbleTail: {
-        borderRadius: BORDER_RADIUS,
-    },
-    receivedBubbleGrouped: {
-        borderRadius: BORDER_RADIUS,
-    },
-    receivedGroupedTop: {
-        borderTopLeftRadius: BORDER_RADIUS,
-    },
+    sentBubbleTail: { borderRadius: BORDER_RADIUS },
+    sentBubbleGrouped: { borderRadius: BORDER_RADIUS },
+    sentGroupedTop: { borderTopRightRadius: BORDER_RADIUS },
+    receivedBubbleTail: { borderRadius: BORDER_RADIUS },
+    receivedBubbleGrouped: { borderRadius: BORDER_RADIUS },
+    receivedGroupedTop: { borderTopLeftRadius: BORDER_RADIUS },
     messageText: {
         fontSize: 15,
         lineHeight: 20,
