@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["BubbleContextMenuModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.bubblecontextmenu.BubbleContextMenuModule"]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["BubbleReactionOverlayModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.bubblereactionoverlay.BubbleReactionOverlayModule"]
+  }
+}

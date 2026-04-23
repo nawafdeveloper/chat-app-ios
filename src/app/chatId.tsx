@@ -1,23 +1,19 @@
 import ChatRoomInput from '@/components/chat-room-input';
+import Bubble from '@/components/message-bubble';
 import VirtualizedListScrollView from '@/components/virtualized-list-scroll-view';
 import { useReplyStore } from '@/store/use-reply-store';
-import { Button, ContextMenu, Divider, Host, Section } from '@expo/ui/swift-ui';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     FlatList,
     ImageBackground,
     ScrollViewProps,
     StyleSheet,
-    Text,
-    useColorScheme,
-    View,
+    useColorScheme
 } from 'react-native';
 import {
     KeyboardGestureArea
 } from 'react-native-keyboard-controller';
-import Svg, { Path } from 'react-native-svg';
 
 type Message = {
     id: string;
@@ -46,161 +42,32 @@ const MESSAGES: Message[] = [
     { id: '16', text: 'See you then!', sent: true, time: '9:53 AM', status: 'sent' },
 ];
 
-const DARK = {
-    sentBubble: '#144D37',
-    receivedBubble: '#242626',
-    sentText: '#E9EDEF',
-    receivedText: '#E9EDEF',
-    sentTime: 'rgba(233,237,239,0.6)',
-    receivedTime: 'rgba(233,237,239,0.5)',
-    checkRead: '#53BDEB',
-    checkUnread: 'rgba(255,255,255,0.6)',
-};
-
-const LIGHT = {
-    sentBubble: '#D9FDD3',
-    receivedBubble: '#FFFFFF',
-    sentText: '#111B21',
-    receivedText: '#111B21',
-    sentTime: 'rgba(0,0,0,0.4)',
-    receivedTime: 'rgba(0,0,0,0.4)',
-    checkRead: '#53BDEB',
-    checkUnread: 'rgba(0,0,0,0.35)',
-};
-
-const TAIL_PATH = "M14.8779 20.8158C8.62452 13.7086 7 4.16101 7 0L0 16.5C4.21754 20.7175 10.2551 22.1503 14.1644 22.4522C15.0416 22.5199 15.4591 21.4764 14.8779 20.8158Z";
-
-function Tail({ color, sent }: { color: string; sent: boolean }) {
-    return (
-        <View style={[
-            styles.tailContainer,
-            sent ? styles.tailSent : styles.tailReceived,
-        ]}>
-            <Svg
-                width={10}
-                height={14}
-                viewBox="0 0 16 23"
-                style={!sent ? { transform: [{ scaleX: -1 }] } : undefined}
-            >
-                <Path d={TAIL_PATH} fill={color} />
-            </Svg>
-        </View>
-    );
-}
-
-type BubbleProps = {
-    message: Message;
-    prevSent?: boolean;
-    nextSent?: boolean;
-    isDark: boolean;
-    setReply: (user: string, message: string) => void;
-};
-
-function Bubble({ message, prevSent, nextSent, isDark, setReply }: BubbleProps) {
-    const { sent, text, time, status } = message;
-    const theme = isDark ? DARK : LIGHT;
-
-    const isGroupedTop = prevSent === sent;
-    const isGroupedBottom = nextSent === sent;
-    const showTail = !isGroupedBottom;
-    const bubbleColor = sent ? theme.sentBubble : theme.receivedBubble;
-
-    return (
-        <Host>
-            <ContextMenu key={message.id}>
-                <ContextMenu.Trigger key={message.id}>
-                    <View style={[
-                        styles.row,
-                        sent ? styles.rowSent : styles.rowReceived,
-                        isGroupedBottom && styles.groupedMargin,
-                    ]}>
-                        {!sent && showTail && <Tail color={bubbleColor} sent={false} />}
-                        {!sent && !showTail && <View style={styles.tailSpacer} />}
-
-                        <View style={[
-                            styles.bubble,
-                            { backgroundColor: bubbleColor },
-                            sent ? (
-                                showTail ? styles.sentBubbleTail : styles.sentBubbleGrouped
-                            ) : (
-                                showTail ? styles.receivedBubbleTail : styles.receivedBubbleGrouped
-                            ),
-                            isGroupedTop && (sent ? styles.sentGroupedTop : styles.receivedGroupedTop),
-                        ]}>
-                            <Text style={[
-                                styles.messageText,
-                                { color: sent ? theme.sentText : theme.receivedText },
-                            ]}>
-                                {text}
-                                <Text style={styles.timeSpacer}>
-                                    {'  ' + time + (sent ? '    ' : '')}
-                                </Text>
-                            </Text>
-                            <View style={styles.metaRow}>
-                                <Text style={[
-                                    styles.timeText,
-                                    { color: sent ? theme.sentTime : theme.receivedTime },
-                                ]}>
-                                    {time}
-                                </Text>
-                                {sent && (
-                                    <Ionicons
-                                        name={
-                                            status === 'read'
-                                                ? 'checkmark-done'
-                                                : status === 'delivered'
-                                                    ? 'checkmark-done'
-                                                    : 'checkmark'
-                                        }
-                                        size={14}
-                                        color={status === 'read' ? theme.checkRead : theme.checkUnread}
-                                        style={styles.checkmark}
-                                    />
-                                )}
-                            </View>
-                        </View>
-
-                        {sent && showTail && <Tail color={bubbleColor} sent={true} />}
-                        {sent && !showTail && <View style={styles.tailSpacer} />}
-                    </View>
-                </ContextMenu.Trigger>
-                <ContextMenu.Items>
-                    <Section title="Message">
-                        <Button label="Reply" systemImage="arrowshape.turn.up.left" onPress={() => setReply('Mohammed', message.text)} />
-                        <Button label="Forward" systemImage="arrowshape.turn.up.right" onPress={() => console.log('Forward', message.text)} />
-                        <Button label="Copy" systemImage="doc.on.doc" onPress={() => console.log('Copy', message.text)} />
-                    </Section>
-                    <Divider />
-                    <Section title="Chat">
-                        <Button label="Pin" systemImage="pin" onPress={() => console.log('Pin', message.text)} />
-                        <Button label="Star" systemImage="star" onPress={() => console.log('Star', message.text)} />
-                        <Button label="Mute" systemImage="bell.slash" onPress={() => console.log('Mute', message.text)} />
-                    </Section>
-                    <Divider />
-                    <Button label="Delete" systemImage="trash" role="destructive" onPress={() => console.log('Delete', message.text)} />
-                </ContextMenu.Items>
-            </ContextMenu>
-        </Host>
-    );
-}
-
-const INPUT_BAR_HEIGHT = 60;
+const DEFAULT_INPUT_BAR_HEIGHT = 60;
 
 const ChatRoom = () => {
     const listRef = useRef<FlatList>(null);
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const { setReply } = useReplyStore();
+    const [composerHeight, setComposerHeight] = useState(DEFAULT_INPUT_BAR_HEIGHT);
 
     const memoList = useCallback(
         (props: ScrollViewProps) => <VirtualizedListScrollView {...props} />,
         [],
     );
 
+    const handleComposerHeightChange = useCallback((nextHeight: number) => {
+        const normalizedHeight = Math.max(DEFAULT_INPUT_BAR_HEIGHT, nextHeight);
+
+        setComposerHeight((currentHeight) => (
+            currentHeight === normalizedHeight ? currentHeight : normalizedHeight
+        ));
+    }, []);
+
     return (
         <KeyboardGestureArea
             interpolator="ios"
-            offset={INPUT_BAR_HEIGHT}
+            offset={composerHeight}
             style={{ flex: 1 }}
             textInputNativeID="chat-input"
         >
@@ -228,12 +95,11 @@ const ChatRoom = () => {
                         />
                     )}
                     contentInsetAdjustmentBehavior="automatic"
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: composerHeight }]}
                     onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
-                    onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
                     renderScrollComponent={memoList}
                 />
-                <ChatRoomInput />
+                <ChatRoomInput onHeightChange={handleComposerHeightChange} />
             </ImageBackground>
             <LinearGradient
                 colors={[
@@ -247,8 +113,6 @@ const ChatRoom = () => {
 };
 
 export default ChatRoom;
-
-const BORDER_RADIUS = 12;
 
 const styles = StyleSheet.create({
     flex: {
@@ -267,71 +131,6 @@ const styles = StyleSheet.create({
     listContent: {
         paddingHorizontal: 16,
         paddingVertical: 8,
-        paddingBottom: INPUT_BAR_HEIGHT,
         gap: 16,
-    },
-    row: {
-        flexDirection: 'row',
-        marginVertical: 1,
-        alignItems: 'flex-end',
-    },
-    rowSent: {
-        justifyContent: 'flex-end',
-    },
-    rowReceived: {
-        justifyContent: 'flex-start',
-    },
-    groupedMargin: {
-        marginBottom: 0,
-    },
-    tailContainer: {
-        width: 10,
-        height: 14,
-        marginBottom: -1,
-    },
-    tailReceived: {
-        marginRight: -5,
-    },
-    tailSent: {
-        marginLeft: -5,
-    },
-    tailSpacer: {
-        width: 16,
-    },
-    bubble: {
-        maxWidth: '75%',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        minWidth: 80,
-        borderRadius: BORDER_RADIUS,
-        borderCurve: 'continuous',
-    },
-    sentBubbleTail: { borderRadius: BORDER_RADIUS },
-    sentBubbleGrouped: { borderRadius: BORDER_RADIUS },
-    sentGroupedTop: { borderTopRightRadius: BORDER_RADIUS },
-    receivedBubbleTail: { borderRadius: BORDER_RADIUS },
-    receivedBubbleGrouped: { borderRadius: BORDER_RADIUS },
-    receivedGroupedTop: { borderTopLeftRadius: BORDER_RADIUS },
-    messageText: {
-        fontSize: 15,
-        lineHeight: 20,
-    },
-    timeSpacer: {
-        fontSize: 11,
-        color: 'transparent',
-    },
-    metaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: 2,
-        marginTop: -14,
-    },
-    timeText: {
-        fontSize: 11,
-        lineHeight: 14,
-    },
-    checkmark: {
-        marginLeft: 1,
     },
 });
