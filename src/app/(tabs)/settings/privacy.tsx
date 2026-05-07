@@ -13,7 +13,7 @@ const PrivacyPageSettings = () => {
         <Host style={{ flex: 1 }}>
             <Form>
                 <Section title='Who can see my personal information'>
-                    <Button modifiers={[buttonStyle('plain')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'last-seen' } })}>
+                    <Button modifiers={[buttonStyle('automatic')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'last-seen' } })}>
                         <HStack spacing={8}>
                             <Text>Last seen & online</Text>
                             <Spacer />
@@ -21,7 +21,7 @@ const PrivacyPageSettings = () => {
                             <Image systemName="chevron.right" size={14} color="secondary" />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'profile-picture' } })}>
+                    <Button modifiers={[buttonStyle('automatic')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'profile-picture' } })}>
                         <HStack spacing={8}>
                             <Text>Profile picture</Text>
                             <Spacer />
@@ -29,7 +29,7 @@ const PrivacyPageSettings = () => {
                             <Image systemName="chevron.right" size={14} color="secondary" />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'about' } })}>
+                    <Button modifiers={[buttonStyle('automatic')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'about' } })}>
                         <HStack spacing={8}>
                             <Text>About</Text>
                             <Spacer />
@@ -37,7 +37,7 @@ const PrivacyPageSettings = () => {
                             <Image systemName="chevron.right" size={14} color="secondary" />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'status' } })}>
+                    <Button modifiers={[buttonStyle('automatic')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'status' } })}>
                         <HStack spacing={8}>
                             <Text>Status</Text>
                             <Spacer />
@@ -47,7 +47,7 @@ const PrivacyPageSettings = () => {
                     </Button>
                 </Section>
                 <Section title='Disappearing messages'>
-                    <Button modifiers={[buttonStyle('plain')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'message-timer' } })}>
+                    <Button modifiers={[buttonStyle('automatic')]} onPress={() => router.push({ pathname: '/(tabs)/settings/privacy-modal', params: { toggleType: 'message-timer' } })}>
                         <HStack spacing={8}>
                             <Text>Default message timer</Text>
                             <Spacer />
@@ -57,7 +57,7 @@ const PrivacyPageSettings = () => {
                     </Button>
                 </Section>
                 <Section>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <Text>Blocked contacts</Text>
                             <Spacer />
@@ -67,7 +67,7 @@ const PrivacyPageSettings = () => {
                     </Button>
                 </Section>
                 <Section title='Advanced'>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <VStack spacing={2} alignment='leading'>
                                 <Text>Read receipts</Text>
@@ -77,14 +77,14 @@ const PrivacyPageSettings = () => {
                             <Toggle isOn={data?.user.enableReadReceipts} />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <Text>Block unknown account</Text>
                             <Spacer />
                             <Toggle isOn={data?.user.blockUnknownAccount} />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <Text>Disable link previews</Text>
                             <Spacer />

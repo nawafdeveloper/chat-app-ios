@@ -112,7 +112,7 @@ const PrivacyModalPageSettings = () => {
                     {config.options.map(({ label, value }) => (
                         <Button
                             key={value}
-                            modifiers={[buttonStyle('plain')]}
+                            modifiers={[buttonStyle('automatic')]}
                             onPress={() => handleSelect(value)}
                         >
                             <HStack spacing={8}>

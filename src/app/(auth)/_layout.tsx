@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useCountrySearchStore } from '@/store/use-country-search-store';
 import { useLoginStore } from '@/store/use-login-store';
 import { usePinStore } from '@/store/use-pin-store';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -23,17 +24,43 @@ export default function AuthLayout() {
                     headerTitle: '',
                     headerBackVisible: false,
                     gestureEnabled: false,
-                    headerRight: () => (
-                        <Pressable
-                            onPress={async () => { await handleNext(); }}
-                            disabled={!isNextEnabled}
-                            style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
-                        >
-                            <ThemedText style={{ fontSize: 15, fontWeight: '500', color: isNextEnabled ? '#fff' : '#9ca3af' }}>
-                                Next
-                            </ThemedText>
-                        </Pressable>
-                    ),
+                    unstable_headerRightItems: () => [
+                        {
+                            type: 'button',
+                            label: 'Next',
+                            onPress: async () => await handleNext(),
+                            tintColor: isNextEnabled && '#25D366',
+                            variant: isNextEnabled ? 'prominent' : 'plain',
+                            labelStyle: {
+                                color: isNextEnabled ? '#fff' : 'gray',
+                                fontWeight: '600'
+                            }
+                        }
+                    ]
+                }}
+            />
+            <NativeStack.Screen
+                name="country-selector"
+                options={{
+                    headerTitle: 'Select country',
+                    headerTransparent: true,
+                    headerBackVisible: true,
+                    headerSearchBarOptions: {
+                        placeholder: 'Search country',
+                        onChangeText: (e: any) => useCountrySearchStore.getState().setQuery(e.nativeEvent.text),
+                    },
+                    contentStyle: { backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#F2F2F7' },
+                    presentation: 'formSheet',
+                    unstable_headerLeftItems: () => [
+                        {
+                            type: 'button',
+                            icon: {
+                                type: 'sfSymbol',
+                                name: 'xmark',
+                            },
+                            onPress: () => router.back()
+                        }
+                    ],
                 }}
             />
             <NativeStack.Screen

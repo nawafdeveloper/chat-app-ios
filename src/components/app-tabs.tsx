@@ -14,11 +14,13 @@ export default function AppTabs() {
       indicatorColor={colors.backgroundElement}
       tintColor={activeColor}
       labelStyle={{ color: DynamicColorIOS({ dark: '#FFFFFF', light: '#000000' }) }}
+      badgeBackgroundColor={'#25D366'}
     >
       <NativeTabs.Trigger name="index" hidden />
       <NativeTabs.Trigger name="chats">
         <NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'message', selected: 'message.fill' }} />
+        <NativeTabs.Trigger.Badge>12</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="archive">
         <NativeTabs.Trigger.Label>Archive</NativeTabs.Trigger.Label>

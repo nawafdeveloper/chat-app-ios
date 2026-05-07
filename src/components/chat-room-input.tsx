@@ -3,6 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { setAudioModeAsync } from 'expo-audio';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, TextInput, useColorScheme } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -359,11 +360,13 @@ const ChatRoomInput = ({ onHeightChange }: ChatRoomInputProps) => {
                 {/* ── Add attachment — always mounted, width animates to 0 during recording ── */}
                 <Animated.View style={plusButtonWrapperStyle}>
                     <GlassView style={styles.plusButtonContainer} isInteractive>
-                        <Ionicons
-                            name="add"
-                            size={28}
-                            color={scheme === 'dark' ? '#ffffff' : '#000000'}
-                        />
+                        <Pressable onPress={() => router.push('/attachment')}>
+                            <Ionicons
+                                name="add"
+                                size={28}
+                                color={scheme === 'dark' ? '#ffffff' : '#000000'}
+                            />
+                        </Pressable>
                     </GlassView>
                 </Animated.View>
 
@@ -464,6 +467,7 @@ const ChatRoomInput = ({ onHeightChange }: ChatRoomInputProps) => {
                                                 name="mic-outline"
                                                 size={28}
                                                 color={scheme === 'dark' ? '#ffffff' : '#000000'}
+                                                style={{ marginBottom: 6 }}
                                             />
                                         </Animated.View>
                                     </GestureDetector>
@@ -710,7 +714,7 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        marginBottom: 6,
+        marginBottom: 10,
         maxHeight: 120,
         fontSize: 16,
     },

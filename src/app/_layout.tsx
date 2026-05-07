@@ -122,7 +122,7 @@ export default function RootLayout() {
                         <Menu
                           label=""
                           systemImage="ellipsis"
-                          modifiers={[buttonStyle('plain')]}
+                          modifiers={[buttonStyle('automatic')]}
                         >
                           <Section title="More options">
                             <Button label="Pin" systemImage="pin" onPress={() => console.log('Pin')} />
@@ -174,6 +174,66 @@ export default function RootLayout() {
                       </GlassView>
                     </View>
                   ),
+                }}
+              />
+              <Stack.Screen
+                name="attachment"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible: true,
+                  sheetAllowedDetents: 'fitToContents',
+                  sheetResizeAnimationEnabled: false,
+                }}
+              />
+              <Stack.Screen
+                name="image-preview"
+                options={{
+                  animation: 'fade',
+                  gestureDirection: 'vertical',
+                  fullScreenGestureEnabled: true,
+                  animationMatchesGesture: true,
+                  headerShown: true,
+                  headerTransparent: true,
+                  headerBackButtonDisplayMode: 'minimal',
+                  headerTitle: () => (
+                    <GlassView
+                      glassEffectStyle="regular"
+                      isInteractive={true}
+                      style={{
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingHorizontal: 22,
+                        paddingVertical: 8,
+                        borderRadius: 99,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <ThemedText style={{ fontSize: 16, fontWeight: '600', lineHeight: 16 }}>
+                        Ahmed Ali
+                      </ThemedText>
+                      <ThemedText style={{ fontSize: 12, lineHeight: 12, color: '#8E8E93' }}>
+                        22/04/2026, 3:08 AM
+                      </ThemedText>
+                    </GlassView>
+                  ),
+                  headerRight: () => (
+                    <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 9, marginLeft: 6 }}>
+                      <Host matchContents>
+                        <Menu
+                          label=""
+                          systemImage="ellipsis"
+                          modifiers={[buttonStyle('automatic')]}
+                        >
+                          <Section title="More options">
+                            <Button label="Save" systemImage="square.and.arrow.down" onPress={() => console.log('Save')} />
+                            <Button label="Go to message" systemImage="message" onPress={() => console.log('Go to message')} />
+                            <Button label="Delete" systemImage="trash" onPress={() => console.log('Delete')} />
+                          </Section>
+                        </Menu>
+                      </Host>
+                    </View>
+                  )
                 }}
               />
             </Stack.Protected>

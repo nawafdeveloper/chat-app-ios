@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useRef } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
     Gesture,
     GestureDetector,
@@ -10,6 +11,7 @@ import Animated, {
     Extrapolation,
     interpolate,
     runOnJS,
+    SharedTransition,
     useAnimatedStyle,
     useSharedValue,
     withSpring
@@ -57,6 +59,8 @@ const DARK = {
     checkUnread: 'rgba(255,255,255,0.6)',
     replyIcon: 'rgba(255,255,255,0.9)',
     replyBg: '#262626',
+    extraContentSentBg: '#103f2d',
+    extraContentReceivedBg: '#1f1f1f'
 };
 
 const LIGHT = {
@@ -70,6 +74,8 @@ const LIGHT = {
     checkUnread: 'rgba(0,0,0,0.35)',
     replyIcon: '#111B21',
     replyBg: '#ffffff',
+    extraContentSentBg: '#ccedc7',
+    extraContentReceivedBg: '#eeeeee'
 };
 
 const TAIL_PATH =
@@ -185,6 +191,7 @@ function Bubble({ message, prevSent, nextSent, isDark, setReply }: BubbleProps) 
     const isGroupedBottom = nextSent === sent;
     const showTail = !isGroupedBottom;
     const bubbleColor = sent ? theme.sentBubble : theme.receivedBubble;
+    const transition = SharedTransition.duration(100).springify();
 
     const translateX = useSharedValue(0);
 
@@ -269,7 +276,7 @@ function Bubble({ message, prevSent, nextSent, isDark, setReply }: BubbleProps) 
             {!sent && showTail && <Tail color={bubbleColor} sent={false} />}
             {!sent && !showTail && <View style={styles.tailSpacer} />}
 
-            <View
+            <Animated.View
                 style={[
                     styles.bubble,
                     { backgroundColor: bubbleColor },
@@ -279,30 +286,50 @@ function Bubble({ message, prevSent, nextSent, isDark, setReply }: BubbleProps) 
                     isGroupedTop && (sent ? styles.sentGroupedTop : styles.receivedGroupedTop),
                 ]}
             >
-                <Text style={[styles.messageText, { color: sent ? theme.sentText : theme.receivedText }]}>
-                    {text}
-                    <Text style={styles.timeSpacer}>{'  ' + time + (sent ? '    ' : '')}</Text>
-                </Text>
-                <View style={styles.metaRow}>
-                    <Text style={[styles.timeText, { color: sent ? theme.sentTime : theme.receivedTime }]}>
-                        {time}
-                    </Text>
-                    {sent && (
-                        <Ionicons
-                            name={
-                                status === 'read'
-                                    ? 'checkmark-done'
-                                    : status === 'delivered'
-                                        ? 'checkmark-done'
-                                        : 'checkmark'
-                            }
-                            size={14}
-                            color={status === 'read' ? theme.checkRead : theme.checkUnread}
-                            style={styles.checkmark}
+                <View style={[styles.extraContentCommonContainer, { backgroundColor: sent ? theme.extraContentSentBg : theme.extraContentReceivedBg }]}>
+                    {/* <View style={styles.replyBubbleContainer}>
+                        <Text style={styles.replyBubbleUserName}>Mohammed Mahmod</Text>
+                        <Text numberOfLines={2} ellipsizeMode='tail' style={[styles.replyBubbleMessage, { color: sent ? theme.sentTime : theme.receivedTime }]}>
+                            Thinking of having a barbecue at my place on Saturday 🍖
+                        </Text>
+                    </View> */}
+                    <Pressable onPress={() => router.push({ pathname: '/image-preview', params: { messageId: message.id } })}>
+                        <Animated.Image
+                            key={`testing-transition-${message.id}`}
+                            sharedTransitionStyle={transition}
+                            sharedTransitionTag={`testing-transition-${message.id}`}
+                            source={require('@/assets/images/testing-image.png')}
+                            resizeMode='contain'
+                            style={{ width: '100%', height: 'auto', aspectRatio: 3 / 4 }}
                         />
-                    )}
+                    </Pressable>
                 </View>
-            </View>
+                <View style={styles.contstantContentContainer}>
+                    <Text style={[styles.messageText, { color: sent ? theme.sentText : theme.receivedText }]}>
+                        {text}
+                        <Text style={styles.timeSpacer}>{'  ' + time + (sent ? '    ' : '')}</Text>
+                    </Text>
+                    <View style={styles.metaRow}>
+                        <Text style={[styles.timeText, { color: sent ? theme.sentTime : theme.receivedTime }]}>
+                            {time}
+                        </Text>
+                        {sent && (
+                            <Ionicons
+                                name={
+                                    status === 'read'
+                                        ? 'checkmark-done'
+                                        : status === 'delivered'
+                                            ? 'checkmark-done'
+                                            : 'checkmark'
+                                }
+                                size={14}
+                                color={status === 'read' ? theme.checkRead : theme.checkUnread}
+                                style={styles.checkmark}
+                            />
+                        )}
+                    </View>
+                </View>
+            </Animated.View>
 
             {sent && showTail && <Tail color={bubbleColor} sent={true} />}
             {sent && !showTail && <View style={styles.tailSpacer} />}
@@ -390,8 +417,7 @@ const styles = StyleSheet.create({
     tailSpacer: { width: 16 },
     bubble: {
         maxWidth: '75%',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
+        padding: 3,
         minWidth: 80,
         borderRadius: BORDER_RADIUS,
         borderCurve: 'continuous',
@@ -402,6 +428,36 @@ const styles = StyleSheet.create({
     receivedBubbleTail: { borderRadius: BORDER_RADIUS },
     receivedBubbleGrouped: { borderRadius: BORDER_RADIUS },
     receivedGroupedTop: { borderTopLeftRadius: BORDER_RADIUS },
+    extraContentCommonContainer: {
+        width: '100%',
+        borderRadius: 10,
+        borderCurve: 'continuous',
+        overflow: 'hidden',
+        maxHeight: 430
+    },
+    replyBubbleContainer: {
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderLeftWidth: 4,
+        borderLeftColor: '#25D366',
+        flexDirection: 'column',
+        gap: 4
+    },
+    replyBubbleUserName: {
+        fontSize: 14,
+        fontWeight: '600',
+        lineHeight: 15,
+        color: '#25D366',
+    },
+    replyBubbleMessage: {
+        fontSize: 13,
+        fontWeight: '400',
+        lineHeight: 14,
+    },
+    contstantContentContainer: {
+        paddingHorizontal: 5,
+        paddingVertical: 3,
+    },
     messageText: {
         fontSize: 15,
         lineHeight: 20,

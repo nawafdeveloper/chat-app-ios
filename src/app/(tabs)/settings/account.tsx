@@ -10,14 +10,14 @@ const AccountPageSettings = () => {
         <Host style={{ flex: 1 }}>
             <Form>
                 <Section>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <Text>Request account information</Text>
                             <Spacer />
                             <Image systemName="chevron.right" size={14} color="secondary" />
                         </HStack>
                     </Button>
-                    <Button modifiers={[buttonStyle('plain')]}>
+                    <Button modifiers={[buttonStyle('automatic')]}>
                         <HStack spacing={8}>
                             <Text>Delete my account</Text>
                             <Spacer />

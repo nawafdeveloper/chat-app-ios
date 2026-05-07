@@ -1,90 +1,72 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useLogout } from '@/hooks/use-logout';
-import { Button, Host, Menu, Section } from '@expo/ui/swift-ui';
-import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
-import { Stack } from 'expo-router';
+import { useChatSelectionStore } from '@/store/chat-selection-store';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { withLayoutContext } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, Pressable, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, useColorScheme } from 'react-native';
+
+const { Navigator } = createNativeStackNavigator();
+const NativeStack = withLayoutContext(Navigator);
 
 const ChatsLayout = () => {
     const colorScheme = useColorScheme();
-    const {
-        loading,
-        error,
-        errorMsg,
-        handleLogout
-    } = useLogout();
+    const { loading } = useLogout();
+    const { isSelectionMode, enterSelectionMode, exitSelectionMode } = useChatSelectionStore();
 
     if (loading) {
-        <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ThemedView style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <ActivityIndicator size={'small'} />
-                <ThemedText style={{ fontSize: 14 }}>Signing you out, please wait</ThemedText>
+        return (
+            <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ThemedView style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <ActivityIndicator size={'small'} />
+                    <ThemedText style={{ fontSize: 14 }}>Signing you out, please wait</ThemedText>
+                </ThemedView>
             </ThemedView>
-        </ThemedView>
+        );
+    }
+
+    const toggleSelectionMode = () => {
+        if (isSelectionMode) {
+            exitSelectionMode()
+        } else {
+            enterSelectionMode();
+        }
     }
 
     return (
-        <Stack>
-            <Stack.Screen
+        <NativeStack>
+            <NativeStack.Screen
                 name='index'
                 options={{
                     headerTitle: 'Chats',
                     headerLargeTitleEnabled: true,
                     headerSearchBarOptions: {
                         placeholder: 'Search for chats...',
-                        allowToolbarIntegration: false
+                        allowToolbarIntegration: false,
                     },
                     headerLargeTitleShadowVisible: false,
                     headerLargeStyle: { backgroundColor: 'transparent' },
                     contentStyle: { backgroundColor: colorScheme === 'dark' ? '#000000' : '#ffffff' },
-                    headerRight: () => (
-                        <Pressable style={{ paddingHorizontal: 10 }}>
-                            <ThemedText style={{
-                                color: colorScheme === 'dark' ? '#fff' : '#000',
-                                fontSize: 16
-                            }}>
-                                Edit
-                            </ThemedText>
-                        </Pressable>
-                    ),
-                    headerLeft: () => (
-                        <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 9, marginLeft: 6 }}>
-                            <Host matchContents>
-                                <Menu
-                                    label=""
-                                    systemImage="ellipsis"
-                                    modifiers={[buttonStyle('plain')]}
-                                >
-                                    <Section title="More options">
-                                        <Button
-                                            label="New Chat"
-                                            systemImage="square.and.pencil"
-                                            onPress={() => console.log('New Chat')}
-                                        />
-                                        <Button
-                                            label="New Group"
-                                            systemImage="person.2"
-                                            onPress={() => console.log('New Group')}
-                                        />
-                                    </Section>
-                                    <Section title="Account">
-                                        <Button
-                                            label="Logout"
-                                            systemImage="rectangle.portrait.and.arrow.right"
-                                            role="destructive"
-                                            onPress={handleLogout}
-                                        />
-                                    </Section>
-                                </Menu>
-                            </Host>
-                        </View>
-                    )
+                    unstable_headerRightItems: () => [
+                        {
+                            type: 'button',
+                            label: isSelectionMode ? 'Done' : 'Edit',
+                            onPress: () => toggleSelectionMode(),
+                            labelStyle: { fontWeight: '600' }
+                        }
+                    ],
+                    unstable_headerLeftItems: () => [
+                        {
+                            type: 'button',
+                            icon: { type: 'sfSymbol', name: 'square.and.pencil' },
+                            onPress: () => console.log('New Chat'),
+                        },
+                    ],
                 }}
             />
-        </Stack>
-    )
-}
+        </NativeStack>
+    );
+};
 
-export default ChatsLayout
+export default ChatsLayout;

@@ -96,7 +96,6 @@ const ChatRoom = () => {
                     )}
                     contentInsetAdjustmentBehavior="automatic"
                     contentContainerStyle={[styles.listContent, { paddingBottom: composerHeight }]}
-                    onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
                     renderScrollComponent={memoList}
                 />
                 <ChatRoomInput onHeightChange={handleComposerHeightChange} />
@@ -129,6 +128,7 @@ const styles = StyleSheet.create({
         height: 90,
     },
     listContent: {
+        flexDirection: 'column-reverse',
         paddingHorizontal: 16,
         paddingVertical: 8,
         gap: 16,

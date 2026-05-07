@@ -1,46 +1,21 @@
 import { ThemedText } from '@/components/themed-text'
 import { ThemedView } from '@/components/themed-view'
 import { useLoginStore } from '@/store/use-login-store'
-import { SymbolView } from 'expo-symbols'
+import { Button, Divider, Form, Host, HStack, Image, Spacer, TextField, TextFieldRef, Text as TextUI } from '@expo/ui/swift-ui'
+import { buttonStyle, foregroundStyle, keyboardType } from '@expo/ui/swift-ui/modifiers'
+import { Link } from 'expo-router'
 import React, { useRef } from 'react'
 import {
     ActivityIndicator,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useColorScheme,
-    View
+    useColorScheme
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-const COLORS = {
-    dark: {
-        inputBackground: '#1C1C1E',
-        border: '#3A3A3C',
-        divider: '#3A3A3C',
-        text: '#FFFFFF',
-        placeholder: '#636366',
-        buttonText: '#FFFFFF',
-        buttonBackground: '#2C2C2E',
-    },
-    light: {
-        inputBackground: '#efefef',
-        border: '#E5E5EA',
-        divider: '#E5E5EA',
-        text: '#000000',
-        placeholder: '#C7C7CC',
-        buttonText: '#000000',
-        buttonBackground: '#F2F2F7',
-    },
-}
 
 const PhoneLogin = () => {
     const insets = useSafeAreaInsets()
     const scheme = useColorScheme()
-    const isDark = scheme === 'dark'
-    const colors = isDark ? COLORS.dark : COLORS.light
-    const textFieldRef = useRef<TextInput>(null)
+    const ref = useRef<TextFieldRef>(null);
 
     const {
         selectedCountry,
@@ -66,40 +41,40 @@ const PhoneLogin = () => {
             <ThemedText style={styles.description}>
                 Enter your phone number to get started.
             </ThemedText>
-            <View style={styles.formContainer}>
-                <View
-                    style={[
-                        styles.inputRow,
-                        { backgroundColor: colors.inputBackground },
-                    ]}
-                >
-                    <TouchableOpacity
-                        style={styles.countryButton}
-                        activeOpacity={0.7}
-                        onPress={() => textFieldRef.current?.focus()}
-                    >
-                        <Text style={[styles.countryCode, { color: colors.buttonText }]}>
-                            {selectedCountry.value}
-                        </Text>
-                        <SymbolView
-                            tintColor={colors.text}
-                            name={{ ios: 'chevron.down' }}
-                            size={12}
+            <Host style={{ flex: 1 }}>
+                <Form>
+                    <Link href="/(auth)/country-selector" asChild>
+                        <Button modifiers={[buttonStyle('automatic')]}>
+                            <HStack spacing={8}>
+                                <Image systemName="globe" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={16} />
+                                <TextUI modifiers={[foregroundStyle(scheme === 'dark' ? '#ffffff' : '#000000')]}>{selectedCountry.label}</TextUI>
+                                <Spacer />
+                                <Image systemName="chevron.right" size={14} color="secondary" />
+                            </HStack>
+                        </Button>
+                    </Link>
+                    <HStack spacing={18}>
+                        <TextUI modifiers={[foregroundStyle(scheme === 'dark' ? '#ffffff' : '#000000')]}>{selectedCountry.code}</TextUI>
+                        <Divider />
+                        <TextField
+                            ref={ref}
+                            placeholder="Your phone number"
+                            autoFocus
+                            defaultValue={phoneNumber}
+                            onValueChange={(value) => {
+                                if (value.length > selectedCountry.maxLength) {
+                                    const truncated = value.slice(0, selectedCountry.maxLength);
+                                    setPhoneNumber(truncated);
+                                    ref.current?.setText(truncated);
+                                } else {
+                                    setPhoneNumber(value);
+                                }
+                            }}
+                            modifiers={[keyboardType('numeric')]}
                         />
-                    </TouchableOpacity>
-                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-                    <TextInput
-                        ref={textFieldRef}
-                        style={[styles.input, { color: colors.text }]}
-                        placeholder="Your phone number"
-                        placeholderTextColor={colors.placeholder}
-                        keyboardType="number-pad"
-                        autoFocus
-                        value={phoneNumber}
-                        onChangeText={setPhoneNumber}
-                    />
-                </View>
-            </View>
+                    </HStack>
+                </Form>
+            </Host>
         </ThemedView>
     )
 }
@@ -110,6 +85,7 @@ const styles = StyleSheet.create({
     main: {
         flex: 1,
         gap: 10,
+        backgroundColor: 'transparent'
     },
     title: {
         fontSize: 24,

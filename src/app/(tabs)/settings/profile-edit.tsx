@@ -116,7 +116,7 @@ const ProfileEditPageSettings = () => {
 
                 <Section>
                     <Button
-                        modifiers={[buttonStyle('plain')]}
+                        modifiers={[buttonStyle('automatic')]}
                         onPress={() => router.push({ pathname: '/(tabs)/settings/profile-edit-modal', params: { editType: 'edit-name' } })}
                     >
                         <HStack spacing={8}>
@@ -127,7 +127,7 @@ const ProfileEditPageSettings = () => {
                         </HStack>
                     </Button>
                     <Button
-                        modifiers={[buttonStyle('plain')]}
+                        modifiers={[buttonStyle('automatic')]}
                         onPress={() => router.push({ pathname: '/(tabs)/settings/profile-edit-modal', params: { editType: 'edit-about' } })}
                     >
                         <HStack spacing={8}>

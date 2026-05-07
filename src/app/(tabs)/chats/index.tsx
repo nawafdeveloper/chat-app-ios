@@ -1,11 +1,13 @@
 import SwipeableRow from '@/components/swipeable-row';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { useChatSelectionStore } from '@/store/chat-selection-store';
 import { Button, ContextMenu, Divider, Host, Section } from '@expo/ui/swift-ui';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
+    Animated,
     FlatList,
     Pressable,
     StyleSheet,
@@ -26,26 +28,16 @@ const NAMES = [
 ];
 
 const MESSAGES = [
-    'Hey, how are you? 😊',
-    'Let me know when you are free',
-    'The meeting is at 3 PM tomorrow',
-    'Check this out! 📸',
-    'Thanks for your help!',
-    'See you later 👋',
-    'Did you finish the project?',
-    'Happy birthday! 🎂🎉',
-    'On my way, be there in 10 min',
-    'Good morning ☀️',
-    'Can you send me the file?',
-    'That sounds great!',
-    'I will call you back',
-    'Don\'t forget the appointment',
-    'What time works for you?',
-    'Just got home 🏠',
-    'Let\'s grab lunch tomorrow',
-    'Perfect, thanks! 👍',
-    'I\'ll send it right away',
-    'Miss you! ❤️',
+    'Hey, how are you? 😊', 'Let me know when you are free',
+    'The meeting is at 3 PM tomorrow', 'Check this out! 📸',
+    'Thanks for your help!', 'See you later 👋',
+    'Did you finish the project?', 'Happy birthday! 🎂🎉',
+    'On my way, be there in 10 min', 'Good morning ☀️',
+    'Can you send me the file?', 'That sounds great!',
+    'I will call you back', "Don't forget the appointment",
+    'What time works for you?', 'Just got home 🏠',
+    "Let's grab lunch tomorrow", 'Perfect, thanks! 👍',
+    "I'll send it right away", 'Miss you! ❤️',
 ];
 
 const TIMES = [
@@ -75,8 +67,8 @@ const AVATAR_COLORS = [
     '#607D8B33', '#79554833', '#4CAF5033', '#FF980033', '#673AB733',
 ];
 
-const generateChats = () => {
-    return Array.from({ length: 50 }, (_, i) => ({
+const generateChats = () =>
+    Array.from({ length: 50 }, (_, i) => ({
         id: i.toString(),
         name: NAMES[i % NAMES.length],
         message: MESSAGES[i % MESSAGES.length],
@@ -86,49 +78,152 @@ const generateChats = () => {
         online: i % 7 === 0,
         read: i % 3 !== 0,
     }));
-};
 
 const CHATS = generateChats();
-
 type ChatItem = ReturnType<typeof generateChats>[number];
 
-export default function ChatScreen() {
-    const theme = useTheme();
+// ─── Animated Chat Row ───────────────────────────────────────────────────────
+const CHECKBOX_WIDTH = 36;
 
+// ─── Isolated animation shell — only re-renders on isSelectionMode change ────
+const ChatRowAnimationShell = React.memo(function ChatRowAnimationShell({
+    item,
+    index,
+    visibleIndicesRef,
+}: {
+    item: ChatItem;
+    index: number;
+    visibleIndicesRef: React.RefObject<Set<number>>;
+}) {
+    const isSelectionMode = useChatSelectionStore((s) => s.isSelectionMode);
+
+    const slideAnim = useRef(new Animated.Value(0)).current;
+    const opacityAnim = useRef(new Animated.Value(0)).current;
+    const rowShiftAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const isVisible = visibleIndicesRef.current?.has(index) ?? false;
+        const toValue = isSelectionMode ? 1 : 0;
+
+        if (isVisible) {
+            // Visible: play full animation
+            Animated.parallel([
+                Animated.spring(slideAnim, { toValue, useNativeDriver: true, tension: 80, friction: 12 }),
+                Animated.timing(opacityAnim, { toValue, duration: 200, useNativeDriver: true }),
+                Animated.spring(rowShiftAnim, { toValue, useNativeDriver: true, tension: 80, friction: 12 }),
+            ]).start();
+        } else {
+            // Off-screen: snap instantly, no animation cost
+            slideAnim.setValue(toValue);
+            opacityAnim.setValue(toValue);
+            rowShiftAnim.setValue(toValue);
+        }
+    }, [isSelectionMode]);
+
+    const checkboxTranslateX = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-CHECKBOX_WIDTH, 0],
+    });
+    const rowTranslateX = rowShiftAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, CHECKBOX_WIDTH],
+    });
+    const rowScale = rowShiftAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0.97],
+    });
+
+    return (
+        <View style={styles.rowWrapper}>
+            {/* Checkbox — only this re-renders on isSelected change */}
+            <Animated.View
+                style={[
+                    styles.checkboxContainer,
+                    {
+                        transform: [{ translateX: checkboxTranslateX }],
+                        opacity: opacityAnim,
+                    },
+                ]}
+            >
+                <CheckboxButton itemId={item.id} />
+            </Animated.View>
+
+            {/* Row shifts right — content inside is fully memoized */}
+            <Animated.View
+                style={[
+                    styles.rowContent,
+                    { transform: [{ translateX: rowTranslateX }, { scaleX: rowScale }] },
+                ]}
+            >
+                <ChatRowContent item={item} index={index} />
+            </Animated.View>
+        </View>
+    );
+});
+
+// ─── Checkbox — only re-renders when THIS item's selected state changes ───────
+const CheckboxButton = React.memo(function CheckboxButton({ itemId }: { itemId: string }) {
+    const isSelected = useChatSelectionStore((s) => s.selectedIds.has(itemId));
+    const toggleSelection = useChatSelectionStore((s) => s.toggleSelection);
+
+    return (
+        <Pressable onPress={() => toggleSelection(itemId)} hitSlop={8}>
+            <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+        </Pressable>
+    );
+});
+
+// ─── Row content — only re-renders when THIS item's selection/mode changes ────
+const ChatRowContent = React.memo(function ChatRowContent({
+    item,
+    index,
+}: {
+    item: ChatItem;
+    index: number;
+}) {
+    const theme = useTheme();
+    const isSelectionMode = useChatSelectionStore((s) => s.isSelectionMode);
+    const isSelected = useChatSelectionStore((s) => s.selectedIds.has(item.id));
+    const toggleSelection = useChatSelectionStore((s) => s.toggleSelection);
+
+    const personColor = PERSON_COLORS[parseInt(item.id) % PERSON_COLORS.length];
     const pressColor = theme.backgroundSelected;
 
-    const getSwipeActions = (item: ChatItem) => [
-        {
-            icon: 'pin' as const,
-            label: 'Pin',
-            color: '#3B82F6',
-            onPress: () => console.log('Pin', item.id),
-        },
-        {
-            icon: 'bell.slash' as const,
-            label: 'Mute',
-            color: '#F59E0B',
-            onPress: () => console.log('Mute', item.id),
-        },
-        {
-            icon: 'trash' as const,
-            label: 'Delete',
-            color: '#EF4444',
-            onPress: () => console.log('Delete', item.id),
-        },
-    ];
+    const handlePress = useCallback(() => {
+        if (isSelectionMode) {
+            toggleSelection(item.id);
+        } else {
+            router.push('/chatId');
+        }
+    }, [isSelectionMode, toggleSelection, item.id]);
 
-    const getSwipeLeftActions = (item: ChatItem) => [
-        {
-            icon: 'archivebox' as const,
-            label: 'Archive',
-            color: '#10B981',
-            onPress: () => console.log('Archive', item.id),
-        },
-    ];
+    if (isSelectionMode) {
+        return (
+            <Pressable
+                style={({ pressed }) => [
+                    styles.chatItem,
+                    { backgroundColor: theme.background },
+                    pressed && { backgroundColor: pressColor },
+                    isSelected && { backgroundColor: theme.backgroundSelected },
+                ]}
+                onPress={handlePress}
+            >
+                <ChatItemContent item={item} index={index} theme={theme} personColor={personColor} />
+            </Pressable>
+        );
+    }
 
-    const renderItem = ({ item, index }: { item: ChatItem; index: number }) => (
-        <SwipeableRow leftActions={getSwipeLeftActions(item)} actions={getSwipeActions(item)}>
+    return (
+        <SwipeableRow
+            leftActions={[{ icon: 'archivebox' as const, label: 'Archive', color: '#10B981', onPress: () => console.log('Archive', item.id) }]}
+            actions={[
+                { icon: 'pin' as const, label: 'Pin', color: '#3B82F6', onPress: () => console.log('Pin', item.id) },
+                { icon: 'bell.slash' as const, label: 'Mute', color: '#F59E0B', onPress: () => console.log('Mute', item.id) },
+                { icon: 'trash' as const, label: 'Delete', color: '#EF4444', onPress: () => console.log('Delete', item.id) },
+            ]}
+        >
             <Host>
                 <ContextMenu>
                     <ContextMenu.Trigger>
@@ -138,88 +233,9 @@ export default function ChatScreen() {
                                 { backgroundColor: theme.background },
                                 pressed && { backgroundColor: pressColor },
                             ]}
-                            onPress={() => router.push('/chatId')}
+                            onPress={handlePress}
                         >
-                            {/* Avatar */}
-                            <View style={styles.avatarContainer}>
-                                <View style={[
-                                    styles.avatar,
-                                    {
-                                        backgroundColor: item.avatarColor,
-                                        borderColor: PERSON_COLORS[parseInt(item.id) % PERSON_COLORS.length] + '33',
-                                    }
-                                ]}>
-                                    <Ionicons
-                                        name="person"
-                                        size={20}
-                                        color={PERSON_COLORS[parseInt(item.id) % PERSON_COLORS.length]}
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Content */}
-                            <View style={styles.chatContent}>
-                                <View style={styles.topRow}>
-                                    <ThemedText
-                                        style={[styles.chatName, { color: theme.text }]}
-                                        numberOfLines={1}
-                                    >
-                                        {item.name}
-                                    </ThemedText>
-                                    <ThemedText
-                                        style={[
-                                            styles.chatTime,
-                                            { color: item.unreadCount > 0 ? '#25D366' : theme.textSecondary },
-                                        ]}
-                                    >
-                                        {item.time}
-                                    </ThemedText>
-                                </View>
-
-                                <View style={styles.bottomRow}>
-                                    <View style={styles.messageRow}>
-                                        {item.read ? (
-                                            <Ionicons
-                                                name="checkmark-done"
-                                                size={16}
-                                                color="#25D366"
-                                                style={styles.checkIcon}
-                                            />
-                                        ) : (
-                                            <Ionicons
-                                                name="checkmark"
-                                                size={16}
-                                                color={theme.textSecondary}
-                                                style={styles.checkIcon}
-                                            />
-                                        )}
-                                        <ThemedText
-                                            style={[styles.chatMessage, { color: theme.textSecondary }]}
-                                            numberOfLines={1}
-                                        >
-                                            {item.message}
-                                        </ThemedText>
-                                    </View>
-
-                                    {item.unreadCount > 0 && (
-                                        <View style={styles.unreadBadge}>
-                                            <ThemedText style={[styles.unreadText, { color: theme.background }]}>
-                                                {item.unreadCount}
-                                            </ThemedText>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-
-                            {/* iOS-style separator (inset from left) */}
-                            {index < CHATS.length - 1 && (
-                                <View
-                                    style={[
-                                        styles.separator,
-                                        { backgroundColor: theme.backgroundSelected },
-                                    ]}
-                                />
-                            )}
+                            <ChatItemContent item={item} index={index} theme={theme} personColor={personColor} />
                         </Pressable>
                     </ContextMenu.Trigger>
                     <ContextMenu.Items>
@@ -241,6 +257,109 @@ export default function ChatScreen() {
             </Host>
         </SwipeableRow>
     );
+});
+
+// ─── Pure content, no interaction logic ──────────────────────────────────────
+const ChatItemContent = React.memo(function ChatItemContent({
+    item,
+    index,
+    theme,
+    personColor,
+}: {
+    item: ChatItem;
+    index: number;
+    theme: ReturnType<typeof useTheme>;
+    personColor: string;
+}) {
+    return (
+        <>
+            <View style={styles.avatarContainer}>
+                <View style={[
+                    styles.avatar,
+                    {
+                        backgroundColor: item.avatarColor,
+                        borderColor: personColor + '33',
+                    },
+                ]}>
+                    <Ionicons name="person" size={20} color={personColor} />
+                </View>
+            </View>
+
+            <View style={styles.chatContent}>
+                <View style={styles.topRow}>
+                    <ThemedText style={[styles.chatName, { color: theme.text }]} numberOfLines={1}>
+                        {item.name}
+                    </ThemedText>
+                    <ThemedText
+                        style={[
+                            styles.chatTime,
+                            { color: item.unreadCount > 0 ? '#25D366' : theme.textSecondary },
+                        ]}
+                    >
+                        {item.time}
+                    </ThemedText>
+                </View>
+
+                <View style={styles.bottomRow}>
+                    <View style={styles.messageRow}>
+                        <Ionicons
+                            name={item.read ? 'checkmark-done' : 'checkmark'}
+                            size={16}
+                            color={item.read ? '#25D366' : theme.textSecondary}
+                            style={styles.checkIcon}
+                        />
+                        <ThemedText
+                            style={[styles.chatMessage, { color: theme.textSecondary }]}
+                            numberOfLines={1}
+                        >
+                            {item.message}
+                        </ThemedText>
+                    </View>
+
+                    {item.unreadCount > 0 && (
+                        <View style={styles.unreadBadge}>
+                            <ThemedText style={[styles.unreadText, { color: theme.background }]}>
+                                {item.unreadCount}
+                            </ThemedText>
+                        </View>
+                    )}
+                </View>
+            </View>
+
+            {index < CHATS.length - 1 && (
+                <View
+                    style={[
+                        styles.separator,
+                        { backgroundColor: theme.backgroundSelected },
+                    ]}
+                />
+            )}
+        </>
+    );
+}
+);
+// ─── Main Screen ─────────────────────────────────────────────────────────────
+export default function ChatScreen() {
+    const visibleIndicesRef = useRef<Set<number>>(new Set());
+
+    const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+        visibleIndicesRef.current = new Set(
+            viewableItems.map((v: any) => v.index as number)
+        );
+    }, []);
+
+    const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 0 }).current;
+
+    const renderItem = useCallback(
+        ({ item, index }: { item: ChatItem; index: number }) => (
+            <ChatRowAnimationShell
+                item={item}
+                index={index}
+                visibleIndicesRef={visibleIndicesRef}
+            />
+        ),
+        []
+    );
 
     return (
         <FlatList
@@ -250,6 +369,12 @@ export default function ChatScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             contentInsetAdjustmentBehavior="automatic"
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            windowSize={5}
+            maxToRenderPerBatch={8}
+            initialNumToRender={12}
+            removeClippedSubviews={true}
         />
     );
 }
@@ -257,6 +382,36 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     listContent: {
         paddingBottom: 20,
+    },
+    rowWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    checkboxContainer: {
+        position: 'absolute',
+        left: 8,
+        zIndex: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: CHECKBOX_WIDTH,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#C7C7CC',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+    },
+    checkboxSelected: {
+        backgroundColor: '#25D366',
+        borderColor: '#25D366',
+    },
+    rowContent: {
+        flex: 1,
     },
     chatItem: {
         flexDirection: 'row',

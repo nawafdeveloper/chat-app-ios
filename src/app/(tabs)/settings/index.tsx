@@ -1,4 +1,5 @@
 import { formatPhoneNumber } from '@/helper/phone-formatters';
+import { useLogout } from '@/hooks/use-logout';
 import { authClient } from '@/lib/auth-client';
 import { fetchAndDecryptProfileImage } from '@/lib/profile-image';
 import {
@@ -21,6 +22,7 @@ import { useColorScheme } from 'react-native';
 const SettingsScreen = () => {
     const { data } = authClient.useSession();
     const scheme = useColorScheme()
+    const { confirmLogout } = useLogout();
 
     const [decryptedImageUri, setDecryptedImageUri] = useState<string | null>(null)
 
@@ -47,7 +49,7 @@ const SettingsScreen = () => {
             <Form>
                 <Section>
                     <Link href="/(tabs)/settings/profile-edit" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={12}>
                                 <HStack modifiers={[frame({ width: 52, height: 52 }), cornerRadius(99)]}>
                                     {decryptedImageUri ? (
@@ -81,7 +83,7 @@ const SettingsScreen = () => {
 
                 <Section title='Settings'>
                     <Link href="/(tabs)/settings/starred" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="star" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Starred</Text>
@@ -91,7 +93,7 @@ const SettingsScreen = () => {
                         </Button>
                     </Link>
                     <Link href="/(tabs)/settings/linked-devices" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="laptopcomputer.badge.checkmark" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Linked devices</Text>
@@ -104,7 +106,7 @@ const SettingsScreen = () => {
 
                 <Section title='Account'>
                     <Link href="/(tabs)/settings/account" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="key" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Account</Text>
@@ -114,7 +116,7 @@ const SettingsScreen = () => {
                         </Button>
                     </Link>
                     <Link href="/(tabs)/settings/privacy" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="lock" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Privacy</Text>
@@ -124,7 +126,7 @@ const SettingsScreen = () => {
                         </Button>
                     </Link>
                     <Link href="/(tabs)/settings/chats" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="message" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Chats</Text>
@@ -134,7 +136,7 @@ const SettingsScreen = () => {
                         </Button>
                     </Link>
                     <Link href="/(tabs)/settings/notifications" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="app.badge" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Notifications</Text>
@@ -147,7 +149,7 @@ const SettingsScreen = () => {
 
                 <Section title='Help and feedback'>
                     <Link href="/(tabs)/settings/profile-edit" asChild>
-                        <Button modifiers={[buttonStyle('plain')]}>
+                        <Button modifiers={[buttonStyle('automatic')]}>
                             <HStack spacing={8}>
                                 <SwiftImage systemName="questionmark.circle" color={scheme === 'dark' ? '#ffffff' : '#000000'} size={18} />
                                 <Text>Help center</Text>
@@ -157,6 +159,15 @@ const SettingsScreen = () => {
                         </Button>
                     </Link>
                 </Section>
+
+                <Button modifiers={[buttonStyle('automatic')]} onPress={confirmLogout}>
+                    <HStack spacing={8}>
+                        <SwiftImage systemName="iphone.and.arrow.right.outward" color={'red'} size={18} />
+                        <Text modifiers={[foregroundStyle('red')]}>Logout</Text>
+                        <Spacer />
+                        <SwiftImage systemName="chevron.right" size={14} color="red" />
+                    </HStack>
+                </Button>
             </Form>
         </Host>
     )
